@@ -27,9 +27,6 @@ class Command(base.Command[CommandData]):
 
         self.data.version = pathlib.Path(bot.__file__).parent.joinpath("version.txt").read_text()
 
-        media_player = await context.join_audio()
-        await media_player.play()
-
         await context.send_response(self.data.render())
 
 
