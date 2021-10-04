@@ -1,0 +1,15 @@
+# [bot.storage.sql]
+# enabled=true
+# database_url=<dialect>+<driver>://<username>:<password>@<host>:<port>/<table>
+# database_url=sqlite:///<file path>
+
+# [bot.integration.down-for-across]
+# enabled=true
+
+# [bot.integration.youtube]
+# enabled=true
+# api_key=<api_key>
+
+# [bot.platform.discord]
+# enabled=true
+# bot_token=<api_token>

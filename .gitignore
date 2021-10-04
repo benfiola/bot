@@ -1,0 +1,8 @@
+.idea
+*.egg-info
+*.sqlite
+*.ini
+__pycache__
+*.pyc
+/*.py
+!/setup.py
