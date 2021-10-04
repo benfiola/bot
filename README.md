@@ -45,7 +45,7 @@ bot-cli run <config_file>
 Run the following command:
 
 ```shell
-docker build -t bot:latest https://github.com/benfiola/bot.git
+docker build -t bot:latest https://github.com/benfiola/bot.git#main
 docker run --rm -it -v <config_file>:/config.ini bot:latest 
 ```
 
