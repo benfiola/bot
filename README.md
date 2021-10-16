@@ -51,6 +51,15 @@ docker run --rm -it -v <config_file>:/config.ini bot:latest
 
 While using docker, keep in mind that the `config_file` path must be absolute.  If working with a relative path, use `${PWD}/<relative_path>`.
 
+By default, the docker image expects a configuration file hosted at `/config.ini` within the container.
+
+This docker image can be built utilizing docker's multiplatform build support as well (provided the host machine
+ is capable of building for the target architectures):
+
+```
+docker buildx build --platform linux/arm64 -t bot:latest https://github.com/benfiola/bot.git
+```
+
 ### Running programmatically
 Use the following example:
 
