@@ -109,6 +109,9 @@ class MediaPlayerContext(Context[SomeMediaPlayerData]):
     async def is_playing(self) -> bool:
         return await self.platform.is_audio_playing(self.data)
 
+    async def should_stay_connected(self) -> bool:
+        return await self.platform.should_stay_connected_to_audio(self.data)
+
 
 class OnReady(Protocol):
     async def __call__(self):
@@ -283,6 +286,17 @@ class Platform(Generic[SomeCommandData, SomeMediaPlayerData]):
         """
         Returns True/False whether the bot is currently playing audio in the audio channel
         specified by the incoming `MediaPlayerData` object.
+
+        NOTE: Should not require validation
+        :param data:
+        :return:
+        """
+        raise NotImplementedError()
+
+    async def should_stay_connected_to_audio(self, data: MediaPlayerData) -> bool:
+        """
+        Returns True/False whether the bot should continue to stay connected to the audio
+        channel referenced by the incoming `MediaPlayerData` object
 
         NOTE: Should not require validation
         :param data:

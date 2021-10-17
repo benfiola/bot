@@ -85,3 +85,9 @@ async def manual():
     )
     await my_bot.start()
 ```
+
+## TODO
+1. Add unit tests
+2. Implement a more robust state machine for media player (consolidating polling behavior)
+3. Implement proper subcommand support (propagating invalid subcommand errors)
+4. Reduce error verbosity

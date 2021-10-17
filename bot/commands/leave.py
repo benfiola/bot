@@ -22,8 +22,7 @@ class Command(base.Command[CommandData]):
         logger.debug(f"processing")
 
         media_player = await context.join_audio()
-        await media_player.clear()
-        await context.leave_audio()
+        await media_player.leave()
 
         await context.send_response(self.data.render())
 

@@ -24,6 +24,7 @@ class State(enum.Enum):
 
 
 class CommandData(base.CommandData):
+    error: Optional[str] = None
     state: State = State.Search
     search_results: List[youtube.Video] = pydantic.Field(default_factory=list)
     query: str = ""
@@ -77,6 +78,8 @@ class CommandData(base.CommandData):
         return None
 
     def render(self) -> str:
+        if self.error:
+            return error_template.render(data=self)
         if self.state == State.Search:
             return search_template.render(data=self)
         elif self.state == State.SearchResults:
@@ -103,6 +106,8 @@ class Command(base.Command[CommandData]):
         yt_integration: youtube.Integration = None,
         **kwargs,
     ):
+        self.data.error = None
+
         if self.data.state == State.Search:
             _, query = split(message)
             logger.debug(f"processing search: {query}")
@@ -115,16 +120,17 @@ class Command(base.Command[CommandData]):
 
         elif self.data.state == State.SearchResults:
             command, rest = split(message)
+            command = command.lower()
             if command == "next":
                 logger.debug(f"processing search results: next page")
                 self.data.next_page()
-            if command == "prev":
+            elif command == "prev":
                 logger.debug(f"processing search results: previous page")
                 self.data.previous_page()
-            if command == "cancel":
+            elif command == "cancel":
                 logger.debug(f"processing search results: cancel")
                 self.data.cancel()
-            if command == "play":
+            elif command == "play":
                 index, rest = split(rest)
                 logger.debug(f"processing search results: play {index}")
 
@@ -136,6 +142,8 @@ class Command(base.Command[CommandData]):
                 media_player = await context.join_audio()
                 media = await yt_integration.convert(video)
                 await media_player.enqueue(media)
+            else:
+                self.data.error = f"Unknown subcommand: {command}"
 
         await context.send_response(self.data.render())
         return self.data.should_continue_conversation()
@@ -176,5 +184,11 @@ No results found for {b}{{data.query}}{b}.
 cancelled_template = jinja2.Template(
     """
 Cancelled search.
+"""
+)
+
+error_template = jinja2.Template(
+    """
+{cb}{{data.error}}{cb}
 """
 )

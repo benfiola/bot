@@ -141,7 +141,8 @@ class Platform(base.Platform[CommandData, MediaPlayerData]):
             # if response_message_id set, edit existing message with new command response
             logger.debug(f"sending response: edit ({data.message_id})")
             message = await channel.fetch_message(data.response_message_id)
-            await message.edit(content=content)
+            new_message = await message.reply(content=content)
+            data.response_message_id = new_message.id
 
     async def get_media_player_data(self, data: CommandData) -> MediaPlayerData:
         # ensure user is in a voice channel
@@ -231,6 +232,19 @@ class Platform(base.Platform[CommandData, MediaPlayerData]):
             return False
 
         return voice_client.is_playing()
+
+    async def should_stay_connected_to_audio(self, data: MediaPlayerData) -> bool:
+        voice_client = await self._get_voice_client(data)
+
+        if not voice_client:
+            return False
+
+        channel = voice_client.channel
+        if not channel:
+            return False
+
+        channel_not_empty = len(channel.members) > 1
+        return channel_not_empty
 
     async def _get_voice_client(self, data: MediaPlayerData) -> Optional[discord.VoiceClient]:
         """

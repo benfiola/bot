@@ -50,14 +50,16 @@ class MediaPlayer:
     """
 
     data: MediaPlayerData
-    poll_task: Optional[asyncio.Task]
+    should_disconnect_task: Optional[asyncio.Task]
+    song_playing_task: Optional[asyncio.Task]
     context: MediaPlayerContext
     save: Save
 
     def __init__(self, context: MediaPlayerContext):
         self.context = context
         self.data = MediaPlayerData()
-        self.poll_task = None
+        self.should_disconnect_task = None
+        self.song_playing_task = None
         self.save = save
 
     async def start(self):
@@ -77,6 +79,9 @@ class MediaPlayer:
         Plays the song at the top of the queue.
         :return:
         """
+        if not self.should_disconnect_task:
+            self.should_disconnect_task = asyncio.create_task(self.should_disconnect_poll())
+
         if await self.context.is_playing():
             # if already playing - do nothing
             logger.debug(f"play: already playing media ({self.context.data.hash()})")
@@ -91,11 +96,11 @@ class MediaPlayer:
 
         # start playing media and poll for finish
         await self.context.play(self.data.queue[0])
-        self.poll_task = asyncio.create_task(self.poll())
+        self.song_playing_task = asyncio.create_task(self.song_playing_poll())
 
         await self.save(self)
 
-    async def poll(self):
+    async def song_playing_poll(self):
         """
         Task scheduled while playing music: polls for song complete/bot disconnection
         to advance the queue/stop the player.
@@ -107,20 +112,40 @@ class MediaPlayer:
         while all([is_playing, is_connected]):
             is_playing = await self.context.is_playing()
             is_connected = await self.context.is_connected()
+
             await asyncio.sleep(1)
             self.data.elapsed += datetime.timedelta(seconds=1)
 
         # clear poll task
-        self.poll_task = None
+        self.song_playing_task = None
 
         if not is_connected:
             # if disconnected - stop the media player
-            logger.debug(f"poll: disconnected ({self.context.data.hash()})")
+            logger.debug(f"song_playing_poll: disconnected ({self.context.data.hash()})")
             await self.stop()
         elif not is_playing:
             # if song stopped - go to the next song
-            logger.debug(f"poll: song finished ({self.context.data.hash()})")
+            logger.debug(f"song_playing_poll: song finished ({self.context.data.hash()})")
             await self.next()
+
+    async def should_disconnect_poll(self):
+        """
+        Task scheduled when `play` is called: polls to determine whether the bot should
+        continue to stay connected
+        :return:
+        """
+        should_stay_connected = True
+
+        # poll while bot should stay connected
+        while all([should_stay_connected]):
+            await asyncio.sleep(30)
+            should_stay_connected = await self.context.should_stay_connected()
+
+        logger.debug(
+            f"should_disconnect_poll: should not stay connected ({self.context.data.hash()})"
+        )
+        self.should_disconnect_task = None
+        await self.leave()
 
     async def next(self):
         """
@@ -158,9 +183,9 @@ class MediaPlayer:
         logger.debug(f"stop: {media} ({self.context.data.hash()})")
 
         # reset playing state
-        if self.poll_task is not None:
-            self.poll_task.cancel()
-            self.poll_task = None
+        if self.song_playing_task is not None:
+            self.song_playing_task.cancel()
+            self.song_playing_task = None
         self.data.elapsed = datetime.timedelta(seconds=0)
         await self.context.stop()
 
@@ -201,9 +226,9 @@ class MediaPlayer:
 
         return to_return
 
-    async def clear(self):
+    async def leave(self):
         """
-        Stops the currently playing media and removes all items from the queue.
+        Stops the currently playing media, removes all items from the queue, leaves the current channel.
 
         :return:
         """
@@ -211,3 +236,5 @@ class MediaPlayer:
         self.data.queue = []
 
         await self.save(self)
+
+        await self.context.leave_audio()

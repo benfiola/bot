@@ -61,10 +61,10 @@ class Command(Generic[SomeCommandData]):
         assert cls.name is not None, f"{cls.__name__}.name unset"
         assert cls.help is not None, f"{cls.__name__}.help unset"
 
-        exists = cls.registry.get(cls.name)
+        exists = cls.registry.get(cls.name.lower())
         assert exists is None, f"{cls.name} already registered: {exists.__name__}"
 
-        cls.registry[cls.name] = cls
+        cls.registry[cls.name.lower()] = cls
 
     def __class_getitem__(cls, *args):
         """
@@ -102,7 +102,7 @@ class Command(Generic[SomeCommandData]):
         :param name:
         :return:
         """
-        exists = cls.registry.get(name)
+        exists = cls.registry.get(name.lower())
         assert exists is not None, f"command not found: {name}"
         return exists
 
