@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import datetime
 import logging
-from typing import List
+from typing import List, Optional
 import urllib.parse
 
 import pydantic
@@ -47,14 +47,17 @@ class Integration(IntegrationBase):
         assert videos, f"video not found: {video_id}"
         return videos[0]
 
-    async def get_from_url(self, url: str) -> Video:
+    async def get_from_url(self, url: str) -> Optional[Video]:
         """
-        Parses a youtube URL and returns a `Video` object.
+        Parses a youtube URL and returns a `Video` object if a video is found.
         :param url:
         :return:
         """
         logger.debug(f"get: {url}")
         video_id = video_id_from_url(url)
+        if not video_id:
+            return None
+
         return await self.get(video_id)
 
     @staticmethod
@@ -184,7 +187,7 @@ async def video_id_to_stream_url(video_id: str) -> str:
     return stream.url
 
 
-def video_id_from_url(url: str) -> str:
+def video_id_from_url(url: str) -> Optional[str]:
     """
     Attempts to obtain a video_url from a variety of youtube URL formats.
     :param url:
@@ -202,6 +205,10 @@ def video_id_from_url(url: str) -> str:
         # video_id is the last part of the url path
         path = parts.path
         video_id = path.split("/")[-1]
+
+    video_id = video_id.strip()
+    if not video_id:
+        video_id = None
 
     logger.debug(f"video id from url: ({url}) -> ({video_id})")
     return video_id
