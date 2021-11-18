@@ -159,7 +159,7 @@ search_result_template = jinja2.Template(
     """
 Showing results for {i}{{data.query}}{i} ({{data.page_number}} of {{data.total_pages()}})
 {% for video in data.page() -%}
-{b}{{loop.index}}.{b} {{video.title}}
+{b}{{loop.index}}.{b} {{video.title}} ({{video.duration}})
 {% endfor %}
 {c}{cp}next{c} for next page
 {c}{cp}prev{c} for previous page
