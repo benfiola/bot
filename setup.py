@@ -18,7 +18,7 @@ setup(
         "discord.py[voice]==1.7.3",
         "jinja2==3.0.1",
         "pydantic==1.8.2",
-        "pytube==11.0.1",
+        "pytube==11.0.2",
         "requests==2.26.0",
         "selenium==3.141.0",
         "sqlalchemy==1.4.23",
