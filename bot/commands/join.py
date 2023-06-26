@@ -1,34 +1,30 @@
-import logging
+from discord import Interaction
 
-import jinja2
-
-from bot.commands import base
-from bot.platforms import CommandContext
-
-
-logger = logging.getLogger(__name__)
+from bot.bot import bot
+from bot.error import BotCommandError
+from bot.player import Player
+from bot.utils import get_bot_voice_data, get_user_voice_channel
 
 
-class CommandData(base.CommandData):
-    def render(self) -> str:
-        return template.render(data=self)
+@bot.tree.command(description="asks the bot to join your voice channel")
+async def join(interaction: Interaction):
+    user_voice_channel = get_user_voice_channel(interaction)
+    if not user_voice_channel:
+        raise BotCommandError(f"You're not currently in a voice channel")
 
+    bot_voice_data = get_bot_voice_data(interaction)
+    if bot_voice_data:
+        bot_voice_client, bot_voice_channel = bot_voice_data
+        # NOTE: because other commands invoke this command to ensure a bot has joined the user's channel, this if statement cannot throw an exception
+        # (as it captures the case where the bot *already is* in the user's channel)
+        if bot_voice_channel.id == user_voice_channel.id:
+            return
+        if len(bot_voice_channel.members) > 1:
+            raise BotCommandError(f"The bot is currently in another active channel")
+        await bot_voice_client.leave()
 
-class Command(base.Command[CommandData]):
-    name = "join"
-    help = "instruct the bot to join the current audio channel"
-
-    async def process_message(self, message: str, context: CommandContext, **kwargs):
-        logger.debug(f"processing")
-
-        media_player = await context.join_audio()
-        await media_player.play()
-
-        await context.send_response(self.data.render())
-
-
-template = jinja2.Template(
-    """
-Bot has joined current audio channel
-"""
-)
+    await user_voice_channel.connect(cls=Player)
+    if not interaction.response.is_done():
+        await interaction.response.send_message(
+            f"The bot has joined your voice channel"
+        )

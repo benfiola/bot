@@ -1,0 +1,16 @@
+version: "3.8"
+services:
+  bot:
+    build:
+      context: ..
+      dockerfile: .devcontainer/bot.Dockerfile
+    volumes:
+      - ..:/workspaces/bot:cached
+    command: sleep infinity
+    network_mode: service:lavalink
+  lavalink:
+    image: fredboat/lavalink:latest
+    restart: unless-stopped
+    environment:
+      - SERVER_PORT=2333
+      - LAVALINK_SERVER_PASSWORD=youshallnotpass

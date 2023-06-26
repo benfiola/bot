@@ -1,10 +1,5 @@
-from .base import Command
-from . import about
-from . import cw
-from . import help
-from . import join
-from . import leave
-from . import list
-from . import play
-from . import skip
-from . import yt
+import bot.commands.join
+import bot.commands.leave
+import bot.commands.queue
+import bot.commands.url
+import bot.commands.youtube

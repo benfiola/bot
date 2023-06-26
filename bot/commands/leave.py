@@ -1,34 +1,23 @@
-import logging
+from discord import Interaction
 
-import jinja2
-
-from bot.commands import base
-from bot.platforms import CommandContext
-
-
-logger = logging.getLogger(__name__)
+from bot.bot import bot
+from bot.error import BotCommandError
+from bot.utils import get_bot_voice_data, get_user_voice_channel
 
 
-class CommandData(base.CommandData):
-    def render(self) -> str:
-        return template.render(data=self)
+@bot.tree.command(description="asks the bot to leave its voice channel")
+async def leave(interaction: Interaction):
+    bot_voice_data = get_bot_voice_data(interaction)
+    if not bot_voice_data:
+        raise BotCommandError(f"The bot isn't currently in a voice channel")
+    bot_voice_client, bot_voice_channel = bot_voice_data
 
+    user_voice_channel = get_user_voice_channel(interaction)
+    if not user_voice_channel or user_voice_channel.id != bot_voice_channel.id:
+        if len(bot_voice_channel.members) > 1:
+            raise BotCommandError(
+                "The bot is currently in another active voice channel"
+            )
 
-class Command(base.Command[CommandData]):
-    name = "leave"
-    help = "instruct the bot to leave the current audio channel"
-
-    async def process_message(self, message: str, context: CommandContext, **kwargs):
-        logger.debug(f"processing")
-
-        media_player = await context.join_audio()
-        await media_player.leave()
-
-        await context.send_response(self.data.render())
-
-
-template = jinja2.Template(
-    """
-Bot has left current voice channel
-"""
-)
+    await bot_voice_client.leave()
+    await interaction.response.send_message(f"The bot has left its voice channel")

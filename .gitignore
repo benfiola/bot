@@ -1,8 +1,11 @@
-.idea
-*.egg-info
-*.sqlite
-*.ini
 __pycache__
 *.pyc
-/*.py
+*.egg-info
+
+/*
+!/.devcontainer
+!/.vscode
+!/bot
+!/.gitignore
+!/pyproject.toml
 !/setup.py

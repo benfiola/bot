@@ -1,55 +1,34 @@
-import asyncio
-import functools
-import pathlib
+from pathlib import Path
 
 import click
 
-from bot.logging_ import configure as configure_loggers
-from bot.config import parse as config_parse
-from bot.main import Bot
-
-
-def sync(func):
-    """
-    Wraps a coroutine in a call to `asyncio.run` as a synchronous method.
-    :param func:
-    :return:
-    """
-
-    @functools.wraps(func)
-    def wrapped(*args, **kwargs):
-        return asyncio.run(func(*args, **kwargs))
-
-    return wrapped
+from bot.bot import bot
+from bot.configuration import Configuration
+from bot.logs import configure_loggers
 
 
 def entry_point():
-    configure_loggers()
-    main()
+    grp_main()
+
+
+pass_configuration = click.make_pass_decorator(Configuration)
 
 
 @click.group()
-def main():
-    pass
+@click.option("--ini-file", type=Path)
+@click.pass_context
+def grp_main(context: click.Context, ini_file: Path | None):
+    configuration = Configuration.parse_obj(dict(_ini_file=ini_file))
+    context.obj = configuration
+    configure_loggers()
 
 
-@main.group()
-def storage():
-    pass
+@grp_main.command("run")
+@pass_configuration
+def cmd_run(configuration: Configuration):
+    bot.configure(configuration)
+    bot.run()
 
 
-@main.command()
-@click.argument("config_file", type=click.Path(exists=True))
-@sync
-async def run(config_file: click.Path):
-    # resolve the configuration file
-    config_file = pathlib.Path(str(config_file)).resolve()
-
-    # parse the configuration file
-    config = config_parse(config_file)
-
-    # create the bot
-    bot = await Bot.create_from_configuration(config)
-
-    # start the bot
-    await bot.start()
+if __name__ == "__main__":
+    entry_point()

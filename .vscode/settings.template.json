@@ -1,0 +1,17 @@
+{
+  "[python]": {
+    "editor.defaultFormatter": "ms-python.black-formatter"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "isort.args": ["--profile", "black"],
+  "editor.codeActionsOnSave": [
+    "source.organizeImports",
+    "source.formatDocument"
+  ],
+  "python.defaultInterpreterPath": "/usr/local/bin/python3"
+}
