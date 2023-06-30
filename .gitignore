@@ -1,11 +1,7 @@
-__pycache__
-*.pyc
-*.egg-info
-
 /*
-!/.devcontainer
 !/.vscode
+!/backend
 !/bot
+!/frontend
+!/.devcontainer.docker-compose.yml
 !/.gitignore
-!/pyproject.toml
-!/setup.py

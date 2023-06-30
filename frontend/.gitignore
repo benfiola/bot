@@ -1,0 +1,21 @@
+/*
+
+# (https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignore
+!/.yarn
+/.yarn/*
+!/.yarn/cache
+!/.yarn/patches
+!/.yarn/plugins
+!/.yarn/releases
+!/.yarn/sdks
+!/.yarn/versions
+
+!/src
+!/.devcontainer.Dockerfile
+!/.devcontainer.json
+!/.devcontainer.post-create.sh
+!/.gitignore
+!/.yarnrc.yml
+!/package.json
+!/tsconfig.json
+!/yarn.lock

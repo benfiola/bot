@@ -1,0 +1,13 @@
+__pycache__
+*.pyc
+*.egg-info
+
+/*
+!/bot
+!/.devcontainer.Dockerfile
+!/.devcontainer.json
+!/.devcontainer.post-create.sh
+!/.gitignore
+!/Dockerfile
+!/pyproject.toml
+!/setup.py

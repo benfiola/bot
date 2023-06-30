@@ -1,0 +1,10 @@
+[project]
+name = "bot"
+version = "0.0.1"
+dependencies = ["click", "discord.py", "pydantic<2", "pynacl", "wavelink"]
+
+[project.scripts]
+bot = "bot.cli:entry_point"
+
+[tool.setuptools]
+packages = ["bot"]

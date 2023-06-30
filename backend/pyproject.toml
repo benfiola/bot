@@ -1,0 +1,10 @@
+[project]
+name = "backend"
+version = "0.0.1"
+dependencies = ["click", "fastapi", "pydantic", "uvicorn"]
+
+[project.scripts]
+backend = "backend.cli:entry_point"
+
+[tool.setuptools]
+packages = ["backend"]

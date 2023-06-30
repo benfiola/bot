@@ -1,0 +1,17 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/python
+{
+  "name": "Development Container",
+  "dockerComposeFile": "../.devcontainer.docker-compose.yml",
+  "service": "frontend",
+  "workspaceFolder": "/workspaces/bot/frontend",
+  "postCreateCommand": "./.devcontainer.post-create.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "rohit-gohri.format-code-action",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  }
+}
