@@ -1,11 +1,12 @@
-from typing import Any, Awaitable, Callable, Type, TypeVar, cast
+from typing import Any, Awaitable, Callable, Type, TypeVar, cast, TYPE_CHECKING
 
 from discord import Interaction, VoiceState
 from discord.app_commands import Command
 from discord.channel import VocalGuildChannel
 from wavelink.player import VoiceChannel
 
-from bot.player import Player
+if TYPE_CHECKING:
+    from bot.player import Player
 
 Instance = TypeVar("Instance")
 
@@ -44,10 +45,12 @@ def ensure_user_voice_channel(interaction: Interaction) -> VocalGuildChannel:
     return user_voice_channel
 
 
-def get_bot_voice_data(interaction: Interaction) -> tuple[Player, VoiceChannel] | None:
+def get_bot_voice_data(interaction: Interaction) -> tuple["Player", VoiceChannel] | None:
     """
     Convenience method to obtain a bot voice client and voice channel from an interaction
     """
+    from bot.player import Player
+    
     # TODO: is it safe to assume there will always be a guild?
     if interaction.guild is None:
         return
@@ -61,7 +64,7 @@ def get_bot_voice_data(interaction: Interaction) -> tuple[Player, VoiceChannel] 
     return voice_client, voice_client.channel
 
 
-def ensure_bot_voice_data(interaction: Interaction) -> tuple[Player, VoiceChannel]:
+def ensure_bot_voice_data(interaction: Interaction) -> tuple["Player", VoiceChannel]:
     """
     Convenience method that ensures a bot voice client and channel exists in an interaction and returns it
     """
