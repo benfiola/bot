@@ -1,10 +1,12 @@
 import configparser
 from pathlib import Path
-from typing import Tuple
+from typing import ClassVar
 from urllib.parse import urlparse
 
 from pydantic import BaseSettings as PydanticBaseSettings
 from pydantic.env_settings import SettingsSourceCallable
+
+from bot.utils import ensure_subclass
 
 
 class BaseSettings(PydanticBaseSettings):
@@ -13,8 +15,8 @@ class BaseSettings(PydanticBaseSettings):
     """
 
     class Config(PydanticBaseSettings.Config):
-        ini_file: None | Path | str = None
-        ini_section: None | str = None
+        ini_file: ClassVar[None | Path | str] = None
+        ini_section: ClassVar[None | str] = None
 
         @classmethod
         def customise_sources(
@@ -22,10 +24,8 @@ class BaseSettings(PydanticBaseSettings):
             init_settings: SettingsSourceCallable,
             env_settings: SettingsSourceCallable,
             file_secret_settings: SettingsSourceCallable,
-        ) -> Tuple[SettingsSourceCallable, ...]:
+        ) -> tuple[SettingsSourceCallable, ...]:
             return init_settings, env_settings, ini_settings
-
-    __config__: Config
 
     def __init__(
         self,
@@ -33,10 +33,12 @@ class BaseSettings(PydanticBaseSettings):
         _ini_section: None | str = None,
         **kwargs,
     ):
-        if _ini_file:   
-            self.__config__.ini_file = _ini_file
+        config = ensure_subclass(self.__config__, self.Config)
+
+        if _ini_file:
+            config.ini_file = _ini_file
         if _ini_section:
-            self.__config__.ini_section = _ini_section
+            config.ini_section = _ini_section
         super().__init__(**kwargs)
 
 
@@ -46,8 +48,9 @@ def ini_settings(settings: PydanticBaseSettings) -> dict:
     """
     if not isinstance(settings, BaseSettings):
         return {}
+    config = ensure_subclass(settings.__config__, BaseSettings.Config)
 
-    ini_file = settings.__config__.ini_file
+    ini_file = config.ini_file
     if not ini_file:
         return {}
 
@@ -58,7 +61,7 @@ def ini_settings(settings: PydanticBaseSettings) -> dict:
     parser = configparser.SafeConfigParser()
     parser.read_string(ini_file.read_text())
 
-    ini_section_str = settings.__config__.ini_section or parser.default_section
+    ini_section_str = config.ini_section or parser.default_section
     return dict(parser[ini_section_str])
 
 
@@ -72,6 +75,8 @@ class Configuration(BaseSettings):
         env_prefix = "BOT_"
 
     discord_api_token: str
+    discord_server_id: int
+    discord_wordle_channel_id: int
     lavalink_url: str
 
     def get_lavalink_password(self) -> str | None:

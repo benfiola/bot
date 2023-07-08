@@ -8,7 +8,6 @@ from bot.bot import bot
 from bot.utils import (
     ensure_bot_voice_data,
     get_bot_voice_data,
-    get_user_voice_channel,
     is_user_in_bot_voice_channel,
 )
 from bot.view import View as BaseView

@@ -2,7 +2,7 @@ import asyncio
 import datetime
 from typing import Coroutine, Type, TypeVar
 
-from discord import Interaction, Message
+from discord import Interaction
 from discord.ui import View as BaseView
 
 SomeView = TypeVar("SomeView", bound="View")

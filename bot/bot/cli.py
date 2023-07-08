@@ -17,7 +17,7 @@ pass_configuration = click.make_pass_decorator(Configuration)
 @click.group()
 @click.option("--ini-file", type=Path)
 @click.pass_context
-def grp_main(context: click.Context, ini_file: Path | None):
+def grp_main(context: click.Context, ini_file: Path | None = None):
     configuration = Configuration.parse_obj(dict(_ini_file=ini_file))
     context.obj = configuration
     configure_loggers()

@@ -1,4 +1,4 @@
-from typing import Any, Awaitable, Callable, Type, TypeVar, cast, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Awaitable, Callable, Type, TypeVar, cast
 
 from discord import Interaction, VoiceState
 from discord.app_commands import Command
@@ -11,6 +11,21 @@ if TYPE_CHECKING:
 Instance = TypeVar("Instance")
 
 
+def ensure_subclass(obj: Any, v: Type[Instance]) -> Type[Instance]:
+    """
+    Convenience method that asserts a provided object is an subclass of the provided type.
+
+    This is because:
+    * `assert` statements can be removed from optimized python code
+    * typing.TypeGuard requires a `bool` function, and thus, an if statement - negating any benefit of a helper method
+    """
+    if not issubclass(obj, v):
+        raise RuntimeError(
+            f"not a {v.__qualname__} subclass ({type(obj).__qualname__})"
+        )
+    return obj
+
+
 def ensure_instance(obj: Any, v: Type[Instance]) -> Instance:
     """
     Convenience method that asserts a provided object is an instance of the provided type.
@@ -20,7 +35,9 @@ def ensure_instance(obj: Any, v: Type[Instance]) -> Instance:
     * typing.TypeGuard requires a `bool` function, and thus, an if statement - negating any benefit of a helper method
     """
     if not isinstance(obj, v):
-        raise RuntimeError(f"not an {v.__qualname__} instance")
+        raise RuntimeError(
+            f"not an {v.__qualname__} instance ({type(obj).__qualname__})"
+        )
     return obj
 
 
@@ -45,12 +62,14 @@ def ensure_user_voice_channel(interaction: Interaction) -> VocalGuildChannel:
     return user_voice_channel
 
 
-def get_bot_voice_data(interaction: Interaction) -> tuple["Player", VoiceChannel] | None:
+def get_bot_voice_data(
+    interaction: Interaction,
+) -> tuple["Player", VoiceChannel] | None:
     """
     Convenience method to obtain a bot voice client and voice channel from an interaction
     """
     from bot.player import Player
-    
+
     # TODO: is it safe to assume there will always be a guild?
     if interaction.guild is None:
         return
