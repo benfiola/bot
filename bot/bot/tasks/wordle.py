@@ -26,7 +26,8 @@ class Wordle(Cog):
     """
     Cog that polls a specific discord channel for wordle results.
 
-    The current winners for the latest wordle puzzle receive an emoji reaction.
+    The current winners for the latest wordle puzzle receive a winner emoji reaction.
+    Anyone who bricks the latest wordle puzzle (X/6) receives a brick emoji reaction.
     """
 
     def __init__(self):
@@ -37,8 +38,11 @@ class Wordle(Cog):
         """
         Loop that performs wordle result polling.
         """
-        emoji = "👑"
-        regex = re.compile(r"Wordle (\d+) ([\d+])/(6)")
+        winner_emoji = "👑"
+        brick_emoji = "🧱"
+        brick_score = 1000
+
+        regex = re.compile(r"Wordle (\d+) ([\d]+|X)/(\d+)")
 
         channel_id = bot.get_configuration().discord_wordle_channel_id
         channel = ensure_instance(bot.get_channel(channel_id), TextChannel)
@@ -55,7 +59,12 @@ class Wordle(Cog):
                 continue
             if message.created_at >= one_day_ago:
                 recent_results = True
-            number, score, *_ = map(int, match.groups())
+            number, score, *_ = match.groups()
+
+            # transform brick score ('X') into a numeric value for consistent parsing
+            score = f"{brick_score}" if score == "X" else score
+
+            number, score = map(int, (number, score))
             results.setdefault(number, {}).setdefault(score, []).append(message)
 
         # if no wordle results have been posted in the last day, don't do anything
@@ -65,17 +74,20 @@ class Wordle(Cog):
         # determine the latest wordle match and the current winning score
         latest_wordle_match = max(results.keys())
         lowest_score = min(results[latest_wordle_match])
-
+        
         # manipulate message reactions
         for score, score_messages in results[latest_wordle_match].items():
             for message in score_messages:
-                # remove reactions for non-winning scores
-                if score != lowest_score and has_reaction(emoji, message):
+                # remove winner reactions for no-longer-winning scores
+                if score != lowest_score and has_reaction(winner_emoji, message):
                     bot_user = ensure_instance(bot.user, ClientUser)
-                    await message.remove_reaction(emoji, bot_user)
-                # add reactions to winning scores
-                if score == lowest_score and not has_reaction(emoji, message):
-                    await message.add_reaction(emoji)
+                    await message.remove_reaction(winner_emoji, bot_user)
+                # add winner reactions to currently winning scores
+                if score == lowest_score and not has_reaction(winner_emoji, message):
+                    await message.add_reaction(winner_emoji)
+                # add brick emoji for brick scores
+                if score == brick_score and not has_reaction(brick_emoji, message):
+                    await message.add_reaction(brick_emoji)
 
     @loop.before_loop
     async def before_loop(self):
