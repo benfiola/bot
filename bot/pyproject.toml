@@ -1,6 +1,6 @@
 [project]
 name = "bot"
-version = "0.0.3"
+version = "0.0.4"
 dependencies = ["click", "discord.py", "pydantic<2", "pynacl", "wavelink"]
 
 [project.scripts]
