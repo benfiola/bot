@@ -2,7 +2,7 @@ import datetime
 import logging
 import re
 
-from discord import ClientUser, Message, TextChannel
+from discord import ClientUser, Message, Reaction, TextChannel
 from discord.ext import tasks
 from discord.ext.commands import Cog
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def has_reaction(emoji: str, message: Message) -> bool:
     """
-    Helper function that returns True if the bot has already reacted to `message` with `emoji`.
+    Helper function that returns True when the bot has reacted to a specific message.
     """
     for reaction in message.reactions:
         if reaction.emoji != emoji:
@@ -24,6 +24,26 @@ def has_reaction(emoji: str, message: Message) -> bool:
     return False
 
 
+async def add_reaction(emoji: str, message: Message):
+    """
+    Helper function that reacts to a message using the bot user.
+
+    If the reaction already exists, is a no-op.
+    """
+    if not has_reaction(emoji, message):
+        await message.add_reaction(emoji)
+
+
+async def remove_reaction(emoji: str, message: Message, user: ClientUser):
+    """
+    Helper function that removes an existing bot reaction from a message
+
+    If no reaction exists, is a no-op.
+    """
+    if has_reaction(emoji, message):
+        await message.remove_reaction(emoji, user)
+
+
 @bot.cog
 class Wordle(Cog):
     """
@@ -31,6 +51,8 @@ class Wordle(Cog):
 
     The current winners for the latest wordle puzzle receive a winner emoji reaction.
     Anyone who bricks the latest wordle puzzle (X/6) receives a brick emoji reaction.
+    Any wordle boards with all green squares receives a green emoji reaction.
+    Any wordle boards with all yellow squares receives a yellow emoji reaction.
     """
 
     def __init__(self):
@@ -47,9 +69,11 @@ class Wordle(Cog):
         try:
             winner_emoji = "👑"
             brick_emoji = "🧱"
+            green_emoji = "🟩"
+            yellow_emoji = "🟨"
             brick_score = 1000
 
-            regex = re.compile(r"Wordle (\d+) ([\d]+|X)/(\d+)")
+            regex = re.compile(r"Wordle (\d+) ([\d]+|X)/\d+")
 
             channel_id = bot.get_configuration().discord_wordle_channel_id
             channel = ensure_instance(bot.get_channel(channel_id), TextChannel)
@@ -66,7 +90,7 @@ class Wordle(Cog):
                     continue
                 if message.created_at >= one_day_ago:
                     recent_results = True
-                number, score, *_ = match.groups()
+                number, score = match.groups()
 
                 # transform brick score ('X') into a numeric value for consistent parsing
                 score = f"{brick_score}" if score == "X" else score
@@ -85,18 +109,32 @@ class Wordle(Cog):
             # manipulate message reactions
             for score, score_messages in results[latest_wordle_match].items():
                 for message in score_messages:
-                    # remove winner reactions for no-longer-winning scores
-                    if score != lowest_score and has_reaction(winner_emoji, message):
-                        bot_user = ensure_instance(bot.user, ClientUser)
-                        await message.remove_reaction(winner_emoji, bot_user)
-                    # add winner reactions to currently winning scores
-                    if score == lowest_score and not has_reaction(
-                        winner_emoji, message
-                    ):
-                        await message.add_reaction(winner_emoji)
-                    # add brick emoji for brick scores
-                    if score == brick_score and not has_reaction(brick_emoji, message):
-                        await message.add_reaction(brick_emoji)
+                    is_brick = score == brick_score
+                    is_winner = score == lowest_score
+                    has_green = green_emoji in message.content
+                    has_yellow = yellow_emoji in message.content
+                    bot_user = ensure_instance(bot.user, ClientUser)
+
+                    # remove winner reaction for no-longer-winning scores
+                    if not is_winner:
+                        await remove_reaction(winner_emoji, message, bot_user)
+
+                    # add winner reaction to currently winning scores
+                    if is_winner:
+                        await add_reaction(winner_emoji, message)
+
+                    # add brick reaction for brick scores
+                    if is_brick:
+                        await add_reaction(brick_emoji, message)
+
+                    # add green reaction if wordle board is all green
+                    if has_green and not has_yellow:
+                        await add_reaction(green_emoji, message)
+
+                    # add yellow reaction if wordle board is all yellow
+                    if has_yellow and not has_green:
+                        await add_reaction(yellow_emoji, message)
+
         except Exception as e:
             # NOTE: retryable exceptions (see __init__) are not logged - log them explicitly for informational purposes
             logger.exception(f"wordle task raised exception", exc_info=e)
